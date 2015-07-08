@@ -22,7 +22,7 @@ app.route('/')
         var email = request.body.q;
         console.log('POST:'+email);
         if (!email) {
-          response.send('Usage:/?q=[email]')
+          response.send('Usage:curl --data \'q=email\' clearbit.heroku.com')
         }
         clearbit.PersonCompany.find({email: email, stream: false})
           .then(function (reply) {
@@ -47,7 +47,7 @@ app.route('/')
         var email = request.query.q;
         console.log('GET:'+email);
         if (!email) {
-          response.send('Usage:curl --data \'q=email\' clearbit.heroku.com')
+          response.send('Usage:/?q=[email]')
         }
         clearbit.PersonCompany.find({email: email, stream: false})
           .then(function (reply) {
