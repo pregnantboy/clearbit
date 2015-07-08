@@ -1,16 +1,22 @@
-function test () {
-    console.log("airtable read");
+function test() {
+    console.log("airtable ready");
 }
 
 exports.test = test;
 
 var Airtable = require('airtable');
-var base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY}).base('appYJDnuQa910htYR');
+var base = new Airtable({
+    apiKey: process.env.AIRTABLE_API_KEY
+}).base('appYJDnuQa910htYR');
 var Promise = require('promise');
 
+/*
+// Create New Person or Invisible Person Record
+*/
+
 // Creates new person record.
-function createPerson (personData) {
-    return new Promise (function (resolve, reject) {
+function createPerson(email, personData) {
+    return new Promise(function (resolve, reject) {
         var json = personData
         console.log('creating new user:', json.name.fullName);
         base('People').create({
@@ -27,46 +33,49 @@ function createPerson (personData) {
             "Klout handle": json.klout.handle,
             "Foursquare handle": json.foursquare.handle,
             "Aboutme handle": json.aboutme.handle,
-            "Email": json.email,
+            "Email": email,
             "Location": json.location,
             "Bio": json.bio,
         }, function (err, record) {
             if (err) {
-                reject ('createPerson error:'+ err); 
+                reject('createPerson error:' + err);
             } else {
                 var currentId = record.id;
                 updateAvatar('People', currentId, "Avatar", json.avatar);
                 console.log('New person created', currentId);
-                resolve (currentId);
+                resolve(currentId);
             }
         });
     });
 }
 
-function createInvisUserRecord (email) {
-    return new Promise (function (resolve, reject) {
+// Creates new person record with only email.
+function createInvisPerson(email) {
+    return new Promise(function (resolve, reject) {
         base('People').create({
             "Email": email
         }, function (err, record) {
             if (err) {
-                reject ('createInvisUser error: '+ err);
+                reject('createInvisUser error: ' + err);
             } else {
                 var currentId = record.id;
                 console.log('New invis person created', currentId);
-                resolve (currentId);
+                resolve(currentId);
             }
         });
     });
 }
 
 // Checks if image url is null before updating (prevent null url image error).
-function updateAvatar (baseTitle, recordId, columnName, url) {
+function updateAvatar(baseTitle, recordId, columnName, url) {
     if (url != null) {
         var updatedJSON = {};
-        updatedJSON[columnName] = [{"url":url}];
+        updatedJSON[columnName] = [{
+            "url": url
+        }];
         base(baseTitle).update(recordId, updatedJSON, function (err, record) {
             if (err) {
-                console.log(err, baseTitle, recordId, columnName,url);
+                console.log(err, baseTitle, recordId, columnName, url);
                 return;
             }
             console.log('avatar updated!');
@@ -74,30 +83,71 @@ function updateAvatar (baseTitle, recordId, columnName, url) {
     }
 }
 
-// Search for companies using company name and return record id.
-function searchCompany (companyData) {
-    return new Promise (function (resolve, reject) {
-        var json = companyData;
-        base('Companies').list(null, null, {view: 'Main View'}, function(err, records, newOffset) {
-            if (err) { 
-                reject('searchCompany error', err); 
-            }
-            records.forEach(function(record) {
-                if (record.get('Name') != null) {
-                    console.log(record.get('Name'));
-                    if ( record.get('Name').toLowerCase() == json.name.toLowerCase() ) {
-                        console.log('Found company', record.get('Name'), record.id);
-                        resolve (record.id);
+// Search for exisiting user.
+function searchPerson(email) {
+    return new Promise(function (resolve, reject) {
+        base('People').list(null, null, {
+            view: 'Main View'
+        }, function (err, records, newOffset) {
+            if (err) {
+                reject('searchPerson error', err);
+            } else {
+                records.forEach(function (record) {
+                    var recordEmail = record.get('Email');
+                    if (recordEmail != null) {
+                        if (recordEmail.toLowerCase() == email.toLowerCase()) {
+                            console.log('Found exisiting person', recordEmail);
+                            resolve(record.id);
+                        }
                     }
-                }
-            });
-            resolve();
+                });
+                resolve()
+            }
+        });
+    });
+}
+
+// Update existing user 
+function updateExistingPerson(personId, personData) {
+    return new Promise(function (resolve, reject) {
+        // Do not update for now.
+        console.log('Existing Person updated:', personId);
+        resolve(personId);
+    });
+}
+
+/*
+// Create or update company data.
+*/
+
+// Search for companies using company name and return record id.
+function searchCompany(companyData) {
+    return new Promise(function (resolve, reject) {
+        var json = companyData;
+        base('Companies').list(null, null, {
+            view: 'Main View'
+        }, function (err, records, newOffset) {
+            if (err) {
+                reject('searchCompany error', err);
+            } else {
+                records.forEach(function (record) {
+                    var recordName = record.get('Name');
+                    if (recordName != null) {
+                        if (recordName.toLowerCase() == json.name.toLowerCase()) {
+                            console.log('Found company', recordName, record.id);
+                            resolve(record.id);
+                            return;
+                        }
+                    }
+                });
+                resolve();
+            }
         });
     });
 }
 
 // Create new company record.
-function createCompany (companyData, personId) {
+function createCompany(companyData, personId) {
     var json = companyData;
     base('Companies').create({
         "Name": json.name,
@@ -112,9 +162,9 @@ function createCompany (companyData, personId) {
         "Crunchbase handle": json.crunchbase.handle,
         "Linkedin handle": json.linkedin.handle,
         "Facebook handle": json.facebook.handle,
-    }, function(err, record) {
-        if (err) { 
-            console.log('createComapny', err); 
+    }, function (err, record) {
+        if (err) {
+            console.log('createComapny', err);
             return;
         }
         updateAvatar('Companies', record.id, 'Logo', json.logo);
@@ -123,11 +173,11 @@ function createCompany (companyData, personId) {
 }
 
 // Get existing people in the company.
-function getExistingPeople (companyId) {
-    return new Promise (function(resolve, reject) {
-        base('Companies').find(companyId, function(err, record) {
-            if (err) { 
-                reject(err); 
+function getExistingPeople(companyId) {
+    return new Promise(function (resolve, reject) {
+        base('Companies').find(companyId, function (err, record) {
+            if (err) {
+                reject(err);
             }
             console.log(record.get('People'));
             if (record.get('People') == null) {
@@ -139,43 +189,81 @@ function getExistingPeople (companyId) {
     });
 }
 
-// Add new person to the People column in the company.
-function addPersonToCompany (companyId, personId) {
-    var getExisitingPersonPromise = getExistingPeople(companyId);
-    getExisitingPersonPromise.then( function(existingPeople) {
-        existingPeople.push(personId);
-        base('Companies').update(companyId, {
-            "People": existingPeople
-        }, function (err, record) {
-            if (err) {
-                console.log(err);
-                return;
-            }
-            console.log('Existing updated! \n', record.get('People'));
-        });
+// Add new person to the existing People column in the company.
+function addPersonToCompany(companyId, personId) {
+    var getExisitingPeoplePromise = getExistingPeople(companyId);
+    getExisitingPeoplePromise.then(function (existingPeople) {
+        if (existingPeople.indexOf(personId) == -1) {
+            existingPeople.push(personId);
+            console.log('existing people: ', existingPeople);
+            base('Companies').update(companyId, {
+                "People": existingPeople
+            }, function (err, record) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    console.log('Existing company updated! \n', record.get('People'));
+                }
+            });
+        } else {
+            console.log('Person already exists in company record');
+        }
     });
 }
-    
+
+/*
+// Public API
+*/
+
 // Public api to store new user and company data.
-function storeNewUser (personData, companyData) {
-    var createPersonPromise = createPerson(personData);
-    createPersonPromise.then(function (personId) {
-        console.log('current person id: ', personId);
-    }) 
-        .catch(function(error) {
-            console.log(error)
+function storeNewUser(email, personData, companyData) {
+
+    var searchPersonPromise = searchPerson(email);
+    var storePersonPromise = searchPersonPromise
+        .then(function (personId) {
+            //Either creates existing record or create new person record.
+            if (personId == null) {
+                // If personData is null, store record only with email.
+                console.log('new user');
+                if (personData == null) {
+                    return createInvisPerson(email);
+                } else {
+                    return createPerson(email, personData);
+                }
+            } else {
+                console.log('exisiting userId:', personId);
+                return updateExistingPerson(personId, personData);
+            }
+        })
+        // Handle searchPersonPromise rejection.
+        .catch(function (error) {
+            console.log(error);
+        })
+
+    // Waits till createPerson/InvisPerson/updateExistingPerson completes.
+    storePersonPromise
+        .then(function (personId) {
+            console.log('current person id: ', personId);
+        })
+        .catch(function (error) {
+            console.log(error);
         });
-    
+
+    // If companyData is null, end.
     if (companyData == null) {
+        console.log('No company data');
         return;
     }
     var searchCompanyPromise = searchCompany(companyData);
-    
-    Promise.all([createPersonPromise, searchCompanyPromise])
+
+    // Waits till searchCompany and createPerson/InvisPerson/updateExisitngPerson complete.
+    Promise
+        .all([storePersonPromise, searchCompanyPromise])
         .then(function (idArray) {
-            console.log(idArray);
+            console.log('idArray:', idArray);
             var currentCompanyId = idArray[1];
             var currentPersonId = idArray[0];
+            // Either updates exisitng company or create new company record.
             if (currentCompanyId == null) {
                 console.log('new company');
                 createCompany(companyData, currentPersonId);
@@ -184,46 +272,11 @@ function storeNewUser (personData, companyData) {
                 addPersonToCompany(currentCompanyId, currentPersonId);
             }
         })
-        .catch(function(error) {
+        // Handle createPersonPromise or searchPersonPromise rejection.
+        .catch(function (error) {
             console.log(error + '\n cannot store new user')
         });
 }
 
-function storeInvisUser (email, companyData) {
-    var createInvisUserPromise = createInvisUserRecord(email);
-    createInvisUserPromise.then(function (personId) {
-        console.log('current person id: ', personId);
-    }) 
-        .catch(function(error) {
-            console.log(error)
-        });
-    
-    if (companyData == null) {
-        return;
-    }
-    var searchCompanyPromise = searchCompany(companyData);
-    
-    Promise.all([createInvisUserPromise, searchCompanyPromise])
-        .then(function (idArray) {
-            console.log(idArray);
-            var currentCompanyId = idArray[1];
-            var currentPersonId = idArray[0];
-            if (currentCompanyId == null) {
-                console.log('new company');
-                createCompany(companyData, currentPersonId);
-            } else {
-                console.log('existing company');
-                addPersonToCompany(currentCompanyId, currentPersonId);
-            }
-        })
-        .catch(function(error) {
-            console.log(error + '\n cannot store new user')
-        });
-}
-    
 
 exports.storeNewUser = storeNewUser;
-exports.storeInvisUser = storeInvisUser;
-    
-    
-    

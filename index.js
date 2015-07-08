@@ -4,7 +4,6 @@ var clearbit = require('clearbit')(process.env.CLEARBIT_KEY);
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
-
 var airtable = require('./airtable');
 
 app.set('port', (process.env.PORT || 5000));
@@ -18,19 +17,16 @@ app.use(bodyParser.urlencoded({
 }));
 
 app.route('/')
+    // POST requests handler.
     .post(function(request, response) {
         var email = request.body.q;
         console.log('POST:'+email);
         if (!email) {
-          response.send('Usage:curl --data \'q=email\' clearbit.heroku.com')
+          response.send("Usage:curl --data 'q=email' clearbit.heroku.com")
         }
         clearbit.PersonCompany.find({email: email, stream: true})
           .then(function (reply) {
-            if (reply.person == null) {
-                airtable.storeInvisUser(email, reply.company)
-            } else {
-                airtable.storeNewUser(reply.person, reply.company);
-            }
+            airtable.storeNewUser(email, reply.person, reply.company);
             response.setHeader('Content-Type', 'application/json');
             response.write('>>>>>>>PERSON<<<<<<<<<\n');
             response.write(JSON.stringify(reply.person,null,3));
@@ -47,6 +43,7 @@ app.route('/')
             response.send(JSON.stringify(err));
           });
     })
+    // GET requests handler.
     .get(function(request, response) {
         var email = request.query.q;
         console.log('GET:'+email);
@@ -55,7 +52,7 @@ app.route('/')
         }
         clearbit.PersonCompany.find({email: email, stream: true})
           .then(function (reply) {
-            airtable.storeNewUser(reply.person, reply.company);
+            airtable.storeNewUser(email, reply.person, reply.company);
             response.setHeader('Content-Type', 'application/json');
             response.write('>>>>>>>PERSON<<<<<<<<<\n');
             response.write(JSON.stringify(reply.person,null,3));
