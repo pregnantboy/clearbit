@@ -30,7 +30,6 @@ function createPerson (personData) {
             "Email": json.email,
             "Location": json.location,
             "Bio": json.bio,
-            "Gravatar": json.gravatar.avatars
         }, function (err, record) {
             if (err) {
                 reject ('createPerson error:'+ err); 

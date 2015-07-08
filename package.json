@@ -1,4 +1,10 @@
 {
+  "name": "clearbit",
+  "description": "clearbit-airtable integration",
+  "repository": {
+    "type": "git",
+    "url": "https://git.heroku.com/clearbit.git"
+  },
   "dependencies": {
     "airtable": "^0.2.2",
     "body-parser": "^1.13.2",
@@ -6,5 +12,6 @@
     "ejs": "^2.3.2",
     "express": "^4.13.1",
     "promise": "^7.0.3"
-  }
+  },
+  "license": "MIT"
 }
