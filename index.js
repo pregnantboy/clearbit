@@ -24,9 +24,13 @@ app.route('/')
         if (!email) {
           response.send('Usage:curl --data \'q=email\' clearbit.heroku.com')
         }
-        clearbit.PersonCompany.find({email: email, stream: false})
+        clearbit.PersonCompany.find({email: email, stream: true})
           .then(function (reply) {
-            airtable.storeNewUser(reply.person, reply.company);
+            if (reply.person == null) {
+                airtable.storeInvisUser(email, reply.company)
+            } else {
+                airtable.storeNewUser(reply.person, reply.company);
+            }
             response.setHeader('Content-Type', 'application/json');
             response.write('>>>>>>>PERSON<<<<<<<<<\n');
             response.write(JSON.stringify(reply.person,null,3));
@@ -49,7 +53,7 @@ app.route('/')
         if (!email) {
           response.send('Usage:/?q=[email]')
         }
-        clearbit.PersonCompany.find({email: email, stream: false})
+        clearbit.PersonCompany.find({email: email, stream: true})
           .then(function (reply) {
             airtable.storeNewUser(reply.person, reply.company);
             response.setHeader('Content-Type', 'application/json');

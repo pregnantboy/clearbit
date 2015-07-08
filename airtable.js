@@ -36,8 +36,24 @@ function createPerson (personData) {
                 reject ('createPerson error:'+ err); 
             } else {
                 var currentId = record.id;
-                updateAvatar('People', currentId, 'Avatar', json.avatar);
+                updateAvatar('People', currentId, "Avatar", json.avatar);
                 console.log('New person created', currentId);
+                resolve (currentId);
+            }
+        });
+    });
+}
+
+function createInvisUserRecord (email) {
+    return new Promise (function (resolve, reject) {
+        base('People').create({
+            "Email": email
+        }, function (err, record) {
+            if (err) {
+                reject ('createInvisUser error: '+ err);
+            } else {
+                var currentId = record.id;
+                console.log('New invis person created', currentId);
                 resolve (currentId);
             }
         });
@@ -47,11 +63,11 @@ function createPerson (personData) {
 // Checks if image url is null before updating (prevent null url image error).
 function updateAvatar (baseTitle, recordId, columnName, url) {
     if (url != null) {
-        base(baseTitle).update(recordId, {
-            columnName: [{"url": url}]
-        }, function (err, record) {
+        var updatedJSON = {};
+        updatedJSON[columnName] = [{"url":url}];
+        base(baseTitle).update(recordId, updatedJSON, function (err, record) {
             if (err) {
-                console.log(err);
+                console.log(err, baseTitle, recordId, columnName,url);
                 return;
             }
             console.log('avatar updated!');
@@ -63,12 +79,13 @@ function updateAvatar (baseTitle, recordId, columnName, url) {
 function searchCompany (companyData) {
     return new Promise (function (resolve, reject) {
         var json = companyData;
-        base('Companies').list(3, null, {view: 'Main View'}, function(err, records, newOffset) {
+        base('Companies').list(null, null, {view: 'Main View'}, function(err, records, newOffset) {
             if (err) { 
                 reject('searchCompany error', err); 
             }
             records.forEach(function(record) {
                 if (record.get('Name') != null) {
+                    console.log(record.get('Name'));
                     if ( record.get('Name').toLowerCase() == json.name.toLowerCase() ) {
                         console.log('Found company', record.get('Name'), record.id);
                         resolve (record.id);
@@ -172,8 +189,42 @@ function storeNewUser (personData, companyData) {
             console.log(error + '\n cannot store new user')
         });
 }
+
+function storeInvisUser (email, companyData) {
+    var createInvisUserPromise = createInvisUserRecord(email);
+    createInvisUserPromise.then(function (personId) {
+        console.log('current person id: ', personId);
+    }) 
+        .catch(function(error) {
+            console.log(error)
+        });
     
+    if (companyData == null) {
+        return;
+    }
+    var searchCompanyPromise = searchCompany(companyData);
+    
+    Promise.all([createInvisUserPromise, searchCompanyPromise])
+        .then(function (idArray) {
+            console.log(idArray);
+            var currentCompanyId = idArray[1];
+            var currentPersonId = idArray[0];
+            if (currentCompanyId == null) {
+                console.log('new company');
+                createCompany(companyData, currentPersonId);
+            } else {
+                console.log('existing company');
+                addPersonToCompany(currentCompanyId, currentPersonId);
+            }
+        })
+        .catch(function(error) {
+            console.log(error + '\n cannot store new user')
+        });
+}
+    
+
 exports.storeNewUser = storeNewUser;
+exports.storeInvisUser = storeInvisUser;
     
     
     
