@@ -7,7 +7,7 @@ exports.test = test;
 var Airtable = require('airtable');
 var base = new Airtable({
     apiKey: process.env.AIRTABLE_API_KEY
-}).base('appYJDnuQa910htYR');
+}).base('appxVL06ZcWgwXjjy');
 var Promise = require('promise');
 
 /*
@@ -15,65 +15,73 @@ var Promise = require('promise');
 */
 
 // Creates new person record.
-function createPerson(email, personData) {
-    return new Promise(function (resolve, reject) {
-        var json = personData
-        console.log('creating new user:', json.name.fullName);
-        base('People').create({
-            "First Name": json.name.givenName,
-            "Last Name": json.name.familyName,
-            "Title": json.employment.title,
-            "Github handle": json.github.handle,
-            "Facebook handle": json.facebook.handle,
-            "Twitter handle": json.twitter.handle,
-            "Twitter followers": json.twitter.followers,
-            "Google+ handle": json.googleplus.handle,
-            "Angellist handle": json.angellist.handle,
-            "Angellist bio": json.angellist.bio,
-            "Klout handle": json.klout.handle,
-            "Foursquare handle": json.foursquare.handle,
-            "Aboutme handle": json.aboutme.handle,
-            "Email": email,
-            "Location": json.location,
-            "Bio": json.bio,
-        }, function (err, record) {
-            if (err) {
-                reject('createPerson error:' + err);
-            } else {
-                var currentId = record.id;
-                updateAvatar('People', currentId, "Avatar", json.avatar);
-                console.log('New person created', currentId);
-                resolve(currentId);
-            }
-        });
+function createPerson(email, personData, callback) {
+    console.log('creating new user:', personData.name.fullName);
+    base('People').create({
+        "Email": email,
+        "First Name": personData.name.givenName,
+        "Last Name": personData.name.familyName,
+        "Title": personData.employment.title,
+        "Github handle": personData.github.handle,
+        "Facebook handle": personData.facebook.handle,
+        "Twitter handle": personData.twitter.handle,
+        "Twitter followers": personData.twitter.followers,
+        "Google+ handle": personData.googleplus.handle,
+        "Angellist handle": personData.angellist.handle,
+        "Angellist bio": personData.angellist.bio,
+        "Klout handle": personData.klout.handle,
+        "Foursquare handle": personData.foursquare.handle,
+        "Aboutme handle": personData.aboutme.handle,
+        "Location": personData.location,
+        "Bio": personData.bio,
+    }, function(err, record) {
+        if (err) {
+            callback('createPerson error:' + err, null);
+        } else {
+            var currentId = record.id;
+            updatePerson(currentId, personData);
+            updateAvatar('People', currentId, "Avatar", personData.avatar);
+            console.log('New person created', currentId);
+            callback(null,currentId);
+        }
     });
 }
 
+function updatePerson(recordId, json) {
+    base('People').update(recordId, {
+
+    }, function(err, record) {
+        console.log(json);
+        if (err) {
+            console.log('updatePerson for record id' + record.id + ' error' + err);
+        } else {
+            console.log('Person ', record.id, ' sucessfully updated!');
+        }
+    });
+}
 // Creates new person record with only email.
-function createInvisPerson(email) {
-    return new Promise(function (resolve, reject) {
-        base('People').create({
-            "Email": email
-        }, function (err, record) {
-            if (err) {
-                reject('createInvisUser error: ' + err);
-            } else {
-                var currentId = record.id;
-                console.log('New invis person created', currentId);
-                resolve(currentId);
-            }
-        });
+function createInvisPerson(email, callback) {
+    base('People').create({
+        "Email": email
+    }, function(err, record) {
+        if (err) {
+            callback('createInvisUser error: ' + err, null);
+        } else {
+            var currentId = record.id;
+            console.log('New invis person created', currentId);
+            callback(null,currentId);
+        }
     });
 }
 
 // Checks if image url is null before updating (prevent null url image error).
 function updateAvatar(baseTitle, recordId, columnName, url) {
-    if (url != null) {
+    if (url) {
         var updatedJSON = {};
         updatedJSON[columnName] = [{
             "url": url
         }];
-        base(baseTitle).update(recordId, updatedJSON, function (err, record) {
+        base(baseTitle).update(recordId, updatedJSON, function(err, record) {
             if (err) {
                 console.log(err, baseTitle, recordId, columnName, url);
                 return;
@@ -84,36 +92,32 @@ function updateAvatar(baseTitle, recordId, columnName, url) {
 }
 
 // Search for exisiting user.
-function searchPerson(email) {
-    return new Promise(function (resolve, reject) {
-        base('People').list(null, null, {
-            view: 'Main View'
-        }, function (err, records, newOffset) {
-            if (err) {
-                reject('searchPerson error', err);
-            } else {
-                records.forEach(function (record) {
-                    var recordEmail = record.get('Email');
-                    if (recordEmail != null) {
-                        if (recordEmail.toLowerCase() == email.toLowerCase()) {
-                            console.log('Found exisiting person', recordEmail);
-                            resolve(record.id);
-                        }
+function searchPerson(email, callback) {
+    base('People').list(null, null, {
+        view: 'Main View'
+    }, function(err, records, newOffset) {
+        if (err) {
+            callback('searchPerson error'+ err, null);
+        } else {
+            records.forEach(function(record) {
+                var recordEmail = record.get('Email');
+                if (recordEmail) {
+                    if (recordEmail.toLowerCase() == email.toLowerCase()) {
+                        console.log('Found exisiting person', recordEmail);
+                        callback(null,record.id);
                     }
-                });
-                resolve()
-            }
-        });
+                }
+            });
+            callback(null,null);
+        }
     });
 }
 
 // Update existing user 
-function updateExistingPerson(personId, personData) {
-    return new Promise(function (resolve, reject) {
+function updateExistingPerson(personId, personData, callback) {
         // Do not update for now.
-        console.log('Existing Person updated:', personId);
-        resolve(personId);
-    });
+    console.log('Existing Person updated:', personId);
+    callback(null, personId);
 }
 
 /*
@@ -122,17 +126,17 @@ function updateExistingPerson(personId, personData) {
 
 // Search for companies using company name and return record id.
 function searchCompany(companyData) {
-    return new Promise(function (resolve, reject) {
+    return new Promise(function(resolve, reject) {
         var json = companyData;
         base('Companies').list(null, null, {
             view: 'Main View'
-        }, function (err, records, newOffset) {
+        }, function(err, records, newOffset) {
             if (err) {
                 reject('searchCompany error', err);
             } else {
-                records.forEach(function (record) {
+                records.forEach(function(record) {
                     var recordName = record.get('Name');
-                    if (recordName != null) {
+                    if (recordName) {
                         if (recordName.toLowerCase() == json.name.toLowerCase()) {
                             console.log('Found company', recordName, record.id);
                             resolve(record.id);
@@ -162,7 +166,7 @@ function createCompany(companyData, personId) {
         "Crunchbase handle": json.crunchbase.handle,
         "Linkedin handle": json.linkedin.handle,
         "Facebook handle": json.facebook.handle,
-    }, function (err, record) {
+    }, function(err, record) {
         if (err) {
             console.log('createComapny', err);
             return;
@@ -174,13 +178,13 @@ function createCompany(companyData, personId) {
 
 // Get existing people in the company.
 function getExistingPeople(companyId) {
-    return new Promise(function (resolve, reject) {
-        base('Companies').find(companyId, function (err, record) {
+    return new Promise(function(resolve, reject) {
+        base('Companies').find(companyId, function(err, record) {
             if (err) {
                 reject(err);
             }
             console.log(record.get('People'));
-            if (record.get('People') == null) {
+            if (!record.get('People')) {
                 resolve([]);
             } else {
                 resolve(record.get('People'));
@@ -192,13 +196,13 @@ function getExistingPeople(companyId) {
 // Add new person to the existing People column in the company.
 function addPersonToCompany(companyId, personId) {
     var getExisitingPeoplePromise = getExistingPeople(companyId);
-    getExisitingPeoplePromise.then(function (existingPeople) {
+    getExisitingPeoplePromise.then(function(existingPeople) {
         if (existingPeople.indexOf(personId) == -1) {
             existingPeople.push(personId);
             console.log('existing people: ', existingPeople);
             base('Companies').update(companyId, {
                 "People": existingPeople
-            }, function (err, record) {
+            }, function(err, record) {
                 if (err) {
                     console.log(err);
                 } else {
@@ -218,39 +222,32 @@ function addPersonToCompany(companyId, personId) {
 // Public api to store new user and company data.
 function storeNewUser(email, personData, companyData) {
 
-    var searchPersonPromise = searchPerson(email);
-    var storePersonPromise = searchPersonPromise
-        .then(function (personId) {
-            //Either creates existing record or create new person record.
-            if (personId == null) {
+    aync.waterfall ([
+        function(callback) {
+            searchPerson(email, callback);
+        },
+        function (personId, callback) {
+            if (!personId) {
                 // If personData is null, store record only with email.
                 console.log('new user');
-                if (personData == null) {
-                    return createInvisPerson(email);
+                if (!personData) {
+                    createInvisPerson(email, callback);
                 } else {
-                    return createPerson(email, personData);
+                    console.log('creating new person ', personData.name.givenName);
+                    createPerson(email, personData, callback);
                 }
             } else {
                 console.log('exisiting userId:', personId);
-                return updateExistingPerson(personId, personData);
+                updateExistingPerson(personId, personData, callback);
             }
-        })
-        // Handle searchPersonPromise rejection.
-        .catch(function (error) {
-            console.log(error);
-        })
-
-    // Waits till createPerson/InvisPerson/updateExistingPerson completes.
-    storePersonPromise
-        .then(function (personId) {
+        },
+        function(personId, callback) {
             console.log('current person id: ', personId);
-        })
-        .catch(function (error) {
-            console.log(error);
-        });
-
+            callback(personId);
+        },
+        function (personId,)
     // If companyData is null, end.
-    if (companyData == null) {
+    if (!companyData) {
         console.log('No company data');
         return;
     }
@@ -259,12 +256,12 @@ function storeNewUser(email, personData, companyData) {
     // Waits till searchCompany and createPerson/InvisPerson/updateExisitngPerson complete.
     Promise
         .all([storePersonPromise, searchCompanyPromise])
-        .then(function (idArray) {
+        .then(function(idArray) {
             console.log('idArray:', idArray);
             var currentCompanyId = idArray[1];
             var currentPersonId = idArray[0];
             // Either updates exisitng company or create new company record.
-            if (currentCompanyId == null) {
+            if (!currentCompanyId) {
                 console.log('new company');
                 createCompany(companyData, currentPersonId);
             } else {
@@ -273,8 +270,8 @@ function storeNewUser(email, personData, companyData) {
             }
         })
         // Handle createPersonPromise or searchPersonPromise rejection.
-        .catch(function (error) {
-            console.log(error + '\n cannot store new user')
+        .catch(function(error) {
+            console.log(error + '\n cannot store new user');
         });
 }
 

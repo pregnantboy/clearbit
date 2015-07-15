@@ -7,11 +7,16 @@
   },
   "dependencies": {
     "airtable": "^0.2.2",
+    "async": "^1.3.0",
     "body-parser": "^1.13.2",
     "clearbit": "^1.1.3",
     "ejs": "^2.3.2",
     "express": "^4.13.1",
-    "promise": "^7.0.3"
+    "google": "^1.3.0",
+    "http-auth": "^2.2.8",
+    "promise": "^7.0.3",
+    "requestify": "^0.1.17",
+    "underscore": "^1.8.3"
   },
   "license": "MIT"
 }

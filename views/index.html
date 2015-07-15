@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>stalk</title>
+<meta name="ROBOTS" content="NOINDEX, NOFOLLOW" />
+<style type="text/css">
+	#tfheader{
+		background-color:#ffffff;
+	}
+	#tfnewsearch{
+		float:left;
+		padding:20px;
+	}
+	.tftextinput{
+		margin: 0;
+		padding: 5px 15px;
+		font-family: Arial, Helvetica, sans-serif;
+		font-size:14px;
+		border:1px solid #0076a3; border-right:0px;
+		border-top-left-radius: 5px 5px;
+		border-bottom-left-radius: 5px 5px;
+	}
+	.tfbutton {
+		margin: 0;
+		padding: 5px 15px;
+		font-family: Arial, Helvetica, sans-serif;
+		font-size:14px;
+		outline: none;
+		cursor: pointer;
+		text-align: center;
+		text-decoration: none;
+		color: #ffffff;
+		border: solid 1px #0076a3; border-right:0px;
+		background: #0095cd;
+		background: -webkit-gradient(linear, left top, left bottom, from(#00adee), to(#0078a5));
+		background: -moz-linear-gradient(top,  #00adee,  #0078a5);
+		border-top-right-radius: 5px 5px;
+		border-bottom-right-radius: 5px 5px;
+	}
+	.tfbutton:hover {
+		text-decoration: none;
+		background: #007ead;
+		background: -webkit-gradient(linear, left top, left bottom, from(#0095cc), to(#00678e));
+		background: -moz-linear-gradient(top,  #0095cc,  #00678e);
+	}
+	/* Fixes submit button height problem in Firefox */
+	.tfbutton::-moz-focus-inner {
+	  border: 0;
+	}
+	.tfclear{
+		clear:both;
+	}
+</style>
+</head>
+<body>
+	<!-- HTML for SEARCH BAR -->
+	<div id="tfheader">
+		<form id="tfnewsearch" method="post" action="">
+		        <input type="text" class="tftextinput" name="q" size="21" maxlength="120" placeholder="Email"><input type="submit" value="Lookup" class="tfbutton">
+		</form>
+	<div class="tfclear"></div>
+		<div class="airtable-embed" width="100%" height="533px" data-embed-id="shrtArjDzRzmHJk4P" data-layout="card"><a class="airtable-embed-link" href="https://airtable.com/shrtArjDzRzmHJk4P">Open "Main View" in Airtable </a><a class="airtable-embed-attribution" href="https://airtable.com">online database powered by Airtable <img src="https://static.airtable.com/images/airtable_database@2x.png"/></a></div><!-- Please include airtable_embed.js only once per page --><script id="airtable-embed-script" async defer src="https://static.airtable.com/js/embed/airtable_embed.js"></script>
+	</div>
+	
+	<pre><%- data %> </pre>
+
+</body>
+</html>
+
